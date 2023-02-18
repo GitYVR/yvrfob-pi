@@ -24,7 +24,7 @@ let curFob = "";
 const onReadKey = async (key) => {
   console.log(`[FOB] ${key} detected`)
   try {
-    const resp = await axios.get(`https://fobs.dctrl.wtf/fob/valid?fob_key=${key}`)
+    const resp = await axios.get(`https://fobs.dctrl.wtf/fob/${key}/valid`)
     if (resp.data.valid) {
       openDoor();
     }
