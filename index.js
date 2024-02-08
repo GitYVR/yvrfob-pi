@@ -1,7 +1,8 @@
-const axios = require('axios')
 const evdev = require("evdev");
 const reader = new evdev();
 const { Gpio } = require('onoff');
+const { ethers } = require('ethers');
+require('dotenv').config()
 
 const openDoor = () => {
   try {
@@ -21,11 +22,19 @@ reader.open(
 
 let curFob = "";
 
+const FOB_ABI = require("./FobABI.json");
+const FOBNFT_ADDRESS = "0xc378418f2c30dfC73058a9d5018C3bA76910b31F";
+const provider = new ethers.JsonRpcProvider("https://ethereum-sepolia.publicnode.com");
+const fobContract = new ethers.Contract(FOBNFT_ADDRESS, FOB_ABI, provider);
+
 const onReadKey = async (key) => {
   console.log(`[FOB] ${key} detected`)
   try {
-    const resp = await axios.get(`https://fobs.dctrl.wtf/fob/${key}/valid`)
-    if (resp.data.valid) {
+    const encryptedKey = BigInt(key) * BigInt(process.env.LARGEPRIME);
+    const expiration = await fobContract.idToExpiration(encryptedKey);
+    const now = new Date().getTime();
+    if ((expiration * BigInt(1000)) > BigInt(now)) {
+      console.log("opening door");
       openDoor();
     }
   } catch(e) {
